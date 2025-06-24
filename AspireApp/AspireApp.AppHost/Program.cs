@@ -4,8 +4,6 @@
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-
-
 var db = builder.AddSqlServer("db")
                 .PublishAsContainer()
                 .AddDatabase("YemekhaneDb");
