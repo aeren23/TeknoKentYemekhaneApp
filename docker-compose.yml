@@ -23,7 +23,7 @@ services:
       - api
     environment:
       - ApiUrl=http://api:8080  
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Production
     volumes:
       - dataprotection-keys:/root/.aspnet/DataProtection-Keys  
     build:

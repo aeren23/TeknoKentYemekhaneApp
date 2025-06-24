@@ -12,28 +12,25 @@ builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
 
 
-//var apiHttpUrl = Environment.GetEnvironmentVariable("SERVICES__API__HTTP__0");
-//var apiHttpsUrl = Environment.GetEnvironmentVariable("SERVICES__API__HTTPS__0");
+var apiHttpUrl = Environment.GetEnvironmentVariable("SERVICES__API__HTTP__0");
+var apiHttpsUrl = Environment.GetEnvironmentVariable("SERVICES__API__HTTPS__0");
 
+var apiBaseUrl = apiHttpsUrl ?? apiHttpUrl;
 
-//var apiHttpUrl = builder.Configuration["SERVICES__API__HTTP__0"];
-//var apiHttpsUrl = builder.Configuration["SERVICES__API__HTTPS__0"];
+if (apiBaseUrl == null)
+{
+    apiBaseUrl = builder.Configuration["ApiUrl"];
+}
 
-//var apiBaseUrl = apiHttpsUrl ?? apiHttpUrl;
-
-//if (string.IsNullOrEmpty(apiBaseUrl))
-//{
-//    throw new Exception("API base URL bulunamadı!");
-//}
 
 builder.Services.AddHttpClient<EmployeeService>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ApiUrl"]);
+    client.BaseAddress = new Uri(apiBaseUrl);
 });
 
 builder.Services.AddHttpClient<MealRecordService>(client =>
 {
-    client.BaseAddress = new Uri(builder.Configuration["ApiUrl"]);
+    client.BaseAddress = new Uri(apiBaseUrl);
 });
 
 
