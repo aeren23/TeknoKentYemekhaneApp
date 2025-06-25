@@ -13,5 +13,7 @@ namespace YemekhaneApp.Domain.Entities
         public DateOnly MealDate { get; set; } // Date of the meal
         public bool IsEaten { get; set; } // Indicates if the meal was eaten
         public Employee Employee { get; set; }
+        public int Year { get; set; } // Year of the meal record
+        public int Month { get; set; } // Month of the meal record
     }
 }

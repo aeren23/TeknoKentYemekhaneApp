@@ -17,6 +17,8 @@ namespace YemekhaneApp.Persistence.Context
 
         public DbSet<Employee> Employees { get; set; }
         public DbSet<MealRecord> MealRecords { get; set; }
+        public DbSet<UserDebt> UserDebts { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,12 +27,20 @@ namespace YemekhaneApp.Persistence.Context
             // Primary Keys
             modelBuilder.Entity<Employee>().HasKey(e => e.Id);
             modelBuilder.Entity<MealRecord>().HasKey(m => m.Id);
+            modelBuilder.Entity<UserDebt>().HasKey(ud => ud.Id);
+
 
             // Relationships
             modelBuilder.Entity<MealRecord>()
                 .HasOne(m => m.Employee)
                 .WithMany(e => e.MealRecords)
                 .HasForeignKey(m => m.EmployeeId);
+
+
+            modelBuilder.Entity<UserDebt>()
+                .HasOne<Employee>()
+                .WithMany(e => e.UserDebts)
+                .HasForeignKey(ud => ud.EmployeeId);
 
             // Unique constraint: aynı gün aynı çalışana birden fazla kayıt olmasın
             //modelBuilder.Entity<MealRecord>()

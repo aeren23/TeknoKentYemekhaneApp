@@ -12,7 +12,9 @@ namespace YemekhaneApp.Application.DTOs.MealRecord
         public Guid Id { get; set; } // Unique identifier for the meal record
         public Guid EmployeeId { get; set; } // Foreign key to Employee
         public DateOnly MealDate { get; set; } // Date of the meal
-        public bool IsEaten { get; set; } // Indicates if the meal was eaten
+        public bool IsEaten { get; set; }
+        public int Year { get; set; } // Year of the meal record
+        public int Month { get; set; }
         public EmployeeDto Employee { get; set; } // Navigation property to Employee details
     }
 }

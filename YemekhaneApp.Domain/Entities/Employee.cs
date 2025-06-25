@@ -17,5 +17,6 @@ namespace YemekhaneApp.Domain.Entities
 
         public int TotalMealCount { get; set; }
         public ICollection<MealRecord> MealRecords { get; set; }
+        public ICollection<UserDebt> UserDebts { get; set; } 
     }
 }
