@@ -68,8 +68,19 @@ namespace YemekhaneApp.Frontend.Services
 
         public async Task AddMealRecordAsync(MealRecordCreateViewModel mealRecord)
         {
-            var response = await _httpClient.PostAsJsonAsync("api/mealrecord", mealRecord);
-            response.EnsureSuccessStatusCode();
+            var Year= mealRecord.MealDate.Year;
+            var Month = mealRecord.MealDate.Month;
+            var Day = mealRecord.MealDate.Day;
+            var now= DateTime.Now;
+            if (Year==now.Year && Month==now.Month && Day <= now.Day)
+            {
+                var response = await _httpClient.PostAsJsonAsync("api/mealrecord", mealRecord);
+                response.EnsureSuccessStatusCode();
+            }
+            else
+            {
+                throw new InvalidOperationException("You can only add meal records for today or earlier dates.");
+            }
         }
 
         public async Task UpdateMealRecordAsync(MealRecordUpdateViewModel mealRecord)

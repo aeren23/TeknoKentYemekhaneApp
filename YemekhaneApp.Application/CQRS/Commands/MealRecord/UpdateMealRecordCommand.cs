@@ -64,6 +64,8 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
                     existingRecord.IsEaten = request.IsEaten;
                     existingRecord.MealDate = request.MealDate;
                     existingRecord.EmployeeId = request.EmployeeId;
+                    existingRecord.Year = request.MealDate.Year;
+                    existingRecord.Month = request.MealDate.Month;
 
                     await mealRecordRepository.UpdateAsync(existingRecord);
                     await employeeRepository.UpdateAsync(employee);

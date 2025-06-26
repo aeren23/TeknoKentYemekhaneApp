@@ -12,28 +12,6 @@
                     <h4 class="mb-0">Yemek Kaydı Ekle</h4>
                 </div>
                 <div class="card-body">
-                    <div class="mb-3">
-                        <label for="dateInput" class="form-label">Tarih</label>
-                        <input id="dateInput" type="date" class="form-control" @bind="SelectedDate" required />
-                    </div>
-                    <div class="mb-3">
-                        <label for="employeeSelect" class="form-label">Çalışan</label>
-                        <select id="employeeSelect" class="form-select" @bind="SelectedEmployeeId" required>
-                            <option value="">Seçiniz</option>
-                            @if (Employees != null)
-                            {
-                                foreach (var employee in Employees)
-                                {
-                                    <option value="@employee.Id.ToString()">@employee.Name @employee.Surname</option>
-                                }
-                            }
-                        </select>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-success" @onclick="SaveMealRecord" disabled="@(SelectedEmployeeId == Guid.Empty || SelectedDate == null)">
-                            <i class="bi bi-plus-circle"></i> Kaydet
-                        </button>
-                    </div>
                     @if (!string.IsNullOrEmpty(ErrorMessage))
                     {
                         <div class="alert alert-danger mt-3">@ErrorMessage</div>
@@ -42,6 +20,34 @@
                     {
                         <div class="alert alert-success mt-3">@SuccessMessage</div>
                     }
+                    <div class="mb-3">
+                        <label for="dateInput" class="form-label">Tarih</label>
+                        <input id="dateInput" type="date" class="form-control" @bind="SelectedDate"
+                               min="@MinDateString"
+                               max="@MaxDateString"
+                               required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Çalışan</label>
+                        <div class="list-group">
+                            @if (Employees != null)
+                            {
+                                foreach (var employee in Employees)
+                                {
+                                    <button type="button"
+                                            class="list-group-item list-group-item-action @(SelectedEmployeeId == employee.Id ? "active" : "")"
+                                            @onclick="() => SelectEmployee(employee.Id)">
+                                        @employee.Name @employee.Surname
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                        <button class="btn btn-success" @onclick="SaveMealRecord" disabled="@(SelectedEmployeeId == Guid.Empty || SelectedDate == null)">
+                            <i class="bi bi-plus-circle"></i> Kaydet
+                        </button>
+                    </div>     
                 </div>
             </div>
         </div>
@@ -55,16 +61,33 @@
     private string? SuccessMessage;
     private string? ErrorMessage;
 
+    // Sadece bu ay ve bugüne kadar olan günler seçilebilsin
+    private DateTime MinDate => new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
+    private DateTime MaxDate => DateTime.Now.Date;
+    private string MinDateString => MinDate.ToString("yyyy-MM-dd");
+    private string MaxDateString => MaxDate.ToString("yyyy-MM-dd");
+
     protected override async Task OnInitializedAsync()
     {
         Employees = await EmployeeService.GetEmployeesAsync();
+        SelectedDate = DateTime.Now.Date; // Tarih inputunda bugünün tarihi seçili gelsin
+    }
+
+    private void SelectEmployee(Guid employeeId)
+    {
+        SelectedEmployeeId = employeeId;
     }
 
     private async Task SaveMealRecord()
     {
         SuccessMessage = null;
         ErrorMessage = null;
-
+        // Tarih validasyonu
+        if (SelectedDate < MinDate || SelectedDate > MaxDate)
+        {
+            ErrorMessage = "Sadece içinde bulunduğumuz ay ve bugüne kadar olan günler için tarih seçebilirsiniz!";
+            return;
+        }
         if (SelectedEmployeeId != Guid.Empty && SelectedDate.HasValue)
         {
             try
@@ -78,11 +101,10 @@
 
                 SuccessMessage = "Yemek kaydı başarıyla eklendi.";
                 SelectedEmployeeId = Guid.Empty;
-                SelectedDate = null;
+                SelectedDate = DateTime.Now.Date; // Kayıttan sonra tekrar bugünü seçili yap
             }
             catch (Exception ex)
             {
-                // Hata mesajı kontrolü
                 if (ex.Message.Contains("already exists", StringComparison.OrdinalIgnoreCase) ||
                     ex.Message.Contains("aynı gün", StringComparison.OrdinalIgnoreCase) ||
                     ex.Message.Contains("duplicate", StringComparison.OrdinalIgnoreCase))
@@ -91,7 +113,7 @@
                 }
                 else
                 {
-                    ErrorMessage = "Kayıt eklenirken bir hata oluştu: " + ex.Message;
+                    ErrorMessage = "Kayıt eklenirken bir hata oluştu ";
                 }
             }
         }

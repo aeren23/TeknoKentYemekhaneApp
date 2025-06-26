@@ -33,7 +33,10 @@ builder.Services.AddHttpClient<MealRecordService>(client =>
     client.BaseAddress = new Uri(apiBaseUrl);
 });
 
-
+builder.Services.AddHttpClient<UserDebtService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+});
 
 
 var app = builder.Build();

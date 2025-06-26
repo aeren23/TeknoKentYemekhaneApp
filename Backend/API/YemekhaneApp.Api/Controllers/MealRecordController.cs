@@ -64,7 +64,7 @@ namespace YemekhaneApp.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateMealRecord([FromBody] CreateMealRecordCommand command)
         {
-            if(command == null)
+            if (command == null)
             {
                 return BadRequest("Invalid meal record data.");
             }
@@ -100,6 +100,17 @@ namespace YemekhaneApp.Api.Controllers
             }
             return NoContent();
         }
-        
+        [HttpDelete("year/{year}/month/{month}")]
+        public async Task<IActionResult> DeleteAllMealRecordsByMonth(int year, int month)
+        {
+            var command = new DeleteAllMealRecordByMonthCommand(month, year);
+            var result = await _mediator.Send(command);
+            if (!result)
+            {
+                return BadRequest();
+            }
+            return NoContent();
+
+        }
     }
 }

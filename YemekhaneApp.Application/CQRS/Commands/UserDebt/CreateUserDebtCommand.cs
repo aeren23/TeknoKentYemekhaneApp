@@ -14,15 +14,13 @@ namespace YemekhaneApp.Application.CQRS.Commands.UserDebt
         public int Year { get; set; }
         public int Month { get; set; }
         public decimal Amount { get; set; }
-        public bool IsPaid { get; set; }=false;
 
-        public CreateUserDebtCommand(Guid employeeId, int year, int month, decimal amount, bool isPaid = false)
+        public CreateUserDebtCommand(Guid employeeId, int year, int month, decimal amount)
         {
             EmployeeId = employeeId;
             Year = year;
             Month = month;
             Amount = amount;
-            IsPaid = isPaid;
         }
         public class CreateUserDebtCommandHandler : IRequestHandler<CreateUserDebtCommand, Guid>
         {
@@ -39,7 +37,7 @@ namespace YemekhaneApp.Application.CQRS.Commands.UserDebt
                     Year = request.Year,
                     Month = request.Month,
                     Amount = request.Amount,
-                    IsPaid = request.IsPaid
+                    IsPaid = false
                 };
                 await _unitOfWork.GetRepository<Domain.Entities.UserDebt>().AddAsync(userDebt);
                 await _unitOfWork.SaveAsync();

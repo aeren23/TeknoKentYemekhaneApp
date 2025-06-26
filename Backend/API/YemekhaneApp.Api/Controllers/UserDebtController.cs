@@ -47,7 +47,28 @@ namespace YemekhaneApp.Api.Controllers
 
             return Ok(result.Value);
         }
+        [HttpGet("with-debt")]
+        public async Task<IActionResult> GetEmployeesWithUserDebt()
+        {
+            var result = await _mediator.Send(new GetEmployeesWithUserDebtQuery());
+            if (!result.Success)
+                return NotFound(result.ErrorMessage);
 
+            return Ok(result.Value);
+        }
+        // PUT: api/UserDebt/{id}
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update( [FromBody] UpdateUserDebtCommand command)
+        {
+            if (command == null)
+                return BadRequest("Geçersiz istek.");
+
+            var result = await _mediator.Send(command);
+            if (!result)
+                return NotFound("Kayıt bulunamadı veya güncellenemedi.");
+
+            return NoContent();
+        }
         // POST: api/UserDebt
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateUserDebtCommand command)

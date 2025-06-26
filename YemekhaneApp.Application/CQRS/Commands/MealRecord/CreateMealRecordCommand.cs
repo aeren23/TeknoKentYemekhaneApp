@@ -18,6 +18,7 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
         public DateOnly MealDate { get; set; }
         public bool IsEaten { get; set; }
 
+
         public class CreateMealRecordCommandHandler : IRequestHandler<CreateMealRecordCommand, ServiceResponse<Guid>>
         {
             private readonly IUnitOfWork _unitOfWork;
@@ -47,7 +48,11 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
                     if (existingRecord != null)
                         return new ServiceResponse<Guid>("Meal record already exists for this date.");
 
+
                     var mealRecord = _mapper.Map<MealRecordEntity>(request);
+
+                    mealRecord.Year = request.MealDate.Year;
+                    mealRecord.Month = request.MealDate.Month;
 
                     if (mealRecord.IsEaten)
                         employee.TotalMealCount++;

@@ -1,0 +1,68 @@
+﻿@page "/userdebts"
+@using YemekhaneApp.Frontend.Models.Employee
+@inject YemekhaneApp.Frontend.Services.UserDebtService UserDebtService
+@inject NavigationManager NavigationManager
+
+
+<h3 class="mb-4">Borçlu Kullanıcılar</h3>
+
+@if (IsLoading)
+{
+    <div class="text-center my-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Yükleniyor...</span>
+        </div>
+    </div>
+}
+else if (EmployeesWithDebt == null || !EmployeesWithDebt.Any())
+{
+    <div class="alert alert-info mt-4">Borç kaydı olan kullanıcı bulunamadı.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead class="table-primary">
+                <tr>
+                    <th>Ad</th>
+                    <th>Soyad</th>
+                    <th>Email</th>
+                    <th>Detay</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var employee in EmployeesWithDebt)
+                {
+                    <tr>
+                        <td>@employee.Name</td>
+                        <td>@employee.Surname</td>
+                        <td>@employee.Email</td>
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm"
+                                    @onclick="() => NavigateToDetail(employee.Id)">
+                                <i class="bi bi-search"></i> Detay
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private List<EmployeeViewModel> EmployeesWithDebt = new();
+    private bool IsLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsLoading = true;
+        EmployeesWithDebt = await UserDebtService.GetEmployeesWithUserDebtAsync();
+        IsLoading = false;
+    }
+
+    private void NavigateToDetail(Guid employeeId)
+    {
+        NavigationManager.NavigateTo($"/userdebts/detail/{employeeId}");
+    }
+}

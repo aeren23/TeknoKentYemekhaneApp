@@ -1,0 +1,160 @@
+﻿@page "/userdebts/detail/{EmployeeId:guid}"
+@inject YemekhaneApp.Frontend.Services.UserDebtService UserDebtService
+@inject YemekhaneApp.Frontend.Services.EmployeeService EmployeeService
+@inject NavigationManager NavigationManager
+
+@using YemekhaneApp.Frontend.Models.UserDebt
+@using YemekhaneApp.Frontend.Models.Employee
+
+@code {
+    [Parameter]
+    public Guid EmployeeId { get; set; }
+
+    private List<UserDebtViewModel> UserDebts = new();
+    private EmployeeViewModel Employee;
+    private bool IsLoading = true;
+    private string? ErrorMessage;
+    private string? SuccessMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        IsLoading = true;
+        UserDebts = await UserDebtService.GetUserDebtsByEmployeeIdAsync(EmployeeId);
+        Employee = await EmployeeService.GetEmployeeByIdAsync(EmployeeId);
+        IsLoading = false;
+    }
+
+    private async Task PayDebtAsync(UserDebtViewModel debt)
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        try
+        {
+            // API'de bir "PayDebt" endpoint'in yoksa, burada bir Update metodu ile IsPaid=true göndermelisin.
+            debt.IsPaid = true;
+            await UserDebtService.UpdateUserDebtAsync(debt);
+            SuccessMessage = "Borç ödendi olarak işaretlendi.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Borç ödeme işlemi başarısız: " + ex.Message;
+        }
+        UserDebts = await UserDebtService.GetUserDebtsByEmployeeIdAsync(EmployeeId);
+    }
+
+    private async Task DeleteDebtAsync(Guid debtId)
+    {
+        ErrorMessage = null;
+        SuccessMessage = null;
+        try
+        {
+            await UserDebtService.DeleteUserDebtAsync(debtId);
+            SuccessMessage = "Borç kaydı silindi.";
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "Silme işlemi başarısız: " + ex.Message;
+        }
+        UserDebts = await UserDebtService.GetUserDebtsByEmployeeIdAsync(EmployeeId);
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/userdebts");
+    }
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <span>
+                        <i class="bi bi-person-badge"></i>
+                        @if (Employee != null)
+                        {
+                            <b>@Employee.Name @Employee.Surname</b>
+                            <span class="text-light"> - @Employee.Email</span>
+                        }
+                        else
+                        {
+                            <span>Kullanıcı Detayı</span>
+                        }
+                    </span>
+                    <button class="btn btn-light btn-sm" @onclick="GoBack">
+                        <i class="bi bi-arrow-left"></i> Geri
+                    </button>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger">@ErrorMessage</div>
+                    }
+                    @if (!string.IsNullOrEmpty(SuccessMessage))
+                    {
+                        <div class="alert alert-success">@SuccessMessage</div>
+                    }
+                    @if (IsLoading)
+                    {
+                        <div class="text-center my-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Yükleniyor...</span>
+                            </div>
+                        </div>
+                    }
+                    else if (UserDebts == null || !UserDebts.Any())
+                    {
+                        <div class="alert alert-info">Bu kullanıcıya ait borç kaydı bulunamadı.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover align-middle">
+                                <thead class="table-secondary">
+                                    <tr>
+                                        <th>Yıl</th>
+                                        <th>Ay</th>
+                                        <th>Tutar</th>
+                                        <th>Ödeme Durumu</th>
+                                        <th>İşlemler</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var debt in UserDebts.OrderByDescending(x => x.Year).ThenByDescending(x => x.Month))
+                                    {
+                                        <tr>
+                                            <td>@debt.Year</td>
+                                            <td>@debt.Month</td>
+                                            <td>@debt.Amount.ToString("C2")</td>
+                                            <td>
+                                                @if (debt.IsPaid)
+                                                {
+                                                    <span class="badge bg-success">Ödendi</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger">Ödenmedi</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <button class="btn btn-success btn-sm me-2"
+                                                        @onclick="() => PayDebtAsync(debt)"
+                                                        disabled="@debt.IsPaid">
+                                                    <i class="bi bi-cash-coin"></i> Öde
+                                                </button>
+                                                <button class="btn btn-danger btn-sm"
+                                                        @onclick="() => DeleteDebtAsync(debt.Id)">
+                                                    <i class="bi bi-trash"></i> Sil
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
