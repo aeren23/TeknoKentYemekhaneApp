@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using YemekhaneApp.Application.DTOs.Employee;
+using YemekhaneApp.Application.DTOs.Extra;
 
 namespace YemekhaneApp.Application.DTOs.MealRecord
 {
@@ -16,5 +17,6 @@ namespace YemekhaneApp.Application.DTOs.MealRecord
         public int Year { get; set; } // Year of the meal record
         public int Month { get; set; }
         public EmployeeDto Employee { get; set; } // Navigation property to Employee details
+        public List<ExtraDto> Extras { get; set; } = new();
     }
 }

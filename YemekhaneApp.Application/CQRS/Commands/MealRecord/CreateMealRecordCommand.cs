@@ -9,6 +9,7 @@ using YemekhaneApp.Application.Interfaces;
 using YemekhaneApp.Domain.Entities;
 using MealRecordEntity = YemekhaneApp.Domain.Entities.MealRecord;
 using EmployeeEntity = YemekhaneApp.Domain.Entities.Employee;
+using ExtraEntity= YemekhaneApp.Domain.Entities.Extra;
 
 namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
 {
@@ -17,6 +18,7 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
         public Guid EmployeeId { get; set; }
         public DateOnly MealDate { get; set; }
         public bool IsEaten { get; set; }
+        public List<Guid> ExtraIds { get; set; } = new();
 
 
         public class CreateMealRecordCommandHandler : IRequestHandler<CreateMealRecordCommand, ServiceResponse<Guid>>
@@ -53,6 +55,12 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
 
                     mealRecord.Year = request.MealDate.Year;
                     mealRecord.Month = request.MealDate.Month;
+                    if (request.ExtraIds != null && request.ExtraIds.Any())
+                    {
+                        // EF Core many-to-many için navigation property üzerinden iliþki kur
+                        var extras = await _unitOfWork.GetRepository<ExtraEntity>().GetAllAsync(e => request.ExtraIds.Contains(e.Id));
+                        mealRecord.Extras = extras;
+                    }
 
                     if (mealRecord.IsEaten)
                         employee.TotalMealCount++;

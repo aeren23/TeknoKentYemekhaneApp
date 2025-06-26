@@ -48,7 +48,8 @@ namespace YemekhaneApp.Application.CQRS.Queries.MealRecord
                 // Aynı tarihteki tüm meal record'ları, Employee ile birlikte getir
                 var records = await mealRecordRepo.GetAllAsync(
                     m => m.MealDate == mealDate,
-                    x => x.Employee
+                    x => x.Employee,
+                    e => e.Extras
                 );
 
                 if (records == null || !records.Any())

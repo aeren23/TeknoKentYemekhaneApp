@@ -15,5 +15,6 @@ namespace YemekhaneApp.Domain.Entities
         public Employee Employee { get; set; }
         public int Year { get; set; } // Year of the meal record
         public int Month { get; set; } // Month of the meal record
+        public ICollection<Extra> Extras { get; set; }
     }
 }

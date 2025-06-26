@@ -36,7 +36,8 @@ namespace YemekhaneApp.Application.CQRS.Queries.MealRecord
             {
                 var records = await unitOfWork.GetRepository<MealRecordEntity>().GetAllAsync(
                     m => m.Id==request.Id,
-                    x => x.Employee // Include Employee details    
+                    x => x.Employee,// Include Employee details
+                    e => e.Extras
                 );
                 if(records == null || !records.Any())
                     return new ServiceResponse<List<MealRecordDto>>("Kayıt bulunamadı");

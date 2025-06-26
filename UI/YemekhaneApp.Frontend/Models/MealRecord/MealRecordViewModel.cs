@@ -1,4 +1,5 @@
 ﻿using YemekhaneApp.Frontend.Models.Employee;
+using YemekhaneApp.Frontend.Models.Extra;
 
 namespace YemekhaneApp.Frontend.Models.MealRecord
 {
@@ -9,5 +10,7 @@ namespace YemekhaneApp.Frontend.Models.MealRecord
         public DateOnly MealDate { get; set; } 
         public bool IsEaten { get; set; } 
         public EmployeeViewModel Employee { get; set; }
+        public List<ExtraViewModel> Extras { get; set; } = new();
+
     }
 }
