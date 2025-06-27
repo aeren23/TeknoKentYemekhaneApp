@@ -2,6 +2,9 @@
 @inject YemekhaneApp.Frontend.Services.UserDebtService UserDebtService
 @inject YemekhaneApp.Frontend.Services.EmployeeService EmployeeService
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
+
+
 
 @using YemekhaneApp.Frontend.Models.UserDebt
 @using YemekhaneApp.Frontend.Models.Employee
@@ -24,10 +27,15 @@
         IsLoading = false;
     }
 
+
     private async Task PayDebtAsync(UserDebtViewModel debt)
     {
         ErrorMessage = null;
         SuccessMessage = null;
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Bu borcu ödenmiş olarak işaretlemek istediğinize emin misiniz?");
+        if (!confirmed)
+            return;
+
         try
         {
             // API'de bir "PayDebt" endpoint'in yoksa, burada bir Update metodu ile IsPaid=true göndermelisin.
@@ -46,6 +54,11 @@
     {
         ErrorMessage = null;
         SuccessMessage = null;
+
+        var confirmed = await JS.InvokeAsync<bool>("confirm", "Bu borç kaydını silmek istediğinize emin misiniz?");
+        if (!confirmed)
+            return;
+
         try
         {
             await UserDebtService.DeleteUserDebtAsync(debtId);

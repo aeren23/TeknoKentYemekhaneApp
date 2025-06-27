@@ -1,15 +1,23 @@
 ﻿@page "/"
 @using YemekhaneApp.Frontend.Models.Employee
+@using YemekhaneApp.Frontend.Models.Extra
 @using YemekhaneApp.Frontend.Services
 @inject EmployeeService EmployeeService
 @inject MealRecordService MealRecordService
+@inject ExtraService ExtraService
+@inject IJSRuntime JS
 
 <div class="container mt-5">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow">
                 <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">Yemek Kaydı Ekle</h4>
+                    <h4 class="mb-0 d-flex justify-content-between align-items-center">
+                        Yemek Kaydı Ekle
+                        <button class="btn btn-success" @onclick="SaveMealRecord" disabled="@(SelectedEmployeeId == Guid.Empty || SelectedDate == null)">
+                            <i class="bi bi-plus-circle"></i> Kaydet
+                        </button>
+                    </h4>
                 </div>
                 <div class="card-body">
                     @if (!string.IsNullOrEmpty(ErrorMessage))
@@ -28,7 +36,13 @@
                                required />
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Çalışan</label>
+                        <label class="form-label d-flex align-items-center">
+                            Çalışanlar 
+                            <button type="button" class="btn btn-success btn-sm ms-2" title="Çalışan Ekle" @onclick="ShowAddModal">
+                                <i class="bi bi-plus"></i>
+                            </button>
+                        </label>
+                        
                         <div class="list-group">
                             @if (Employees != null)
                             {
@@ -43,16 +57,77 @@
                             }
                         </div>
                     </div>
-                    <div class="d-flex justify-content-end">
-                        <button class="btn btn-success" @onclick="SaveMealRecord" disabled="@(SelectedEmployeeId == Guid.Empty || SelectedDate == null)">
-                            <i class="bi bi-plus-circle"></i> Kaydet
+                    <div class="mb-3">
+                        <button class="btn btn-outline-secondary" type="button" @onclick="ToggleExtras">
+                            <i class="bi bi-plus-circle"></i> Ekstra Ekle
                         </button>
-                    </div>     
+                        @if (ShowExtras)
+                        {
+                            <div class="mt-2 border rounded p-2 bg-light">
+                                <label class="form-label">Ekstralar (Opsiyonel)</label>
+                                <div class="list-group">
+                                    @if (Extras != null)
+                                    {
+                                        foreach (var extra in Extras)
+                                        {
+                                            <label class="list-group-item">
+                                                <input type="checkbox"
+                                                       class="form-check-input me-1"
+                                                       value="@extra.Id"
+                                                       @onchange="e => OnExtraChanged(e, extra.Id)"
+                                                       checked="@SelectedExtraIds.Contains(extra.Id)" />
+                                                @extra.Name (@extra.Price.ToString("C2"))
+                                            </label>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+@if (showAddModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background:rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Yeni Çalışan Ekle</h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddModal"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="newEmployee" OnValidSubmit="AddEmployeeAsync">
+                        <DataAnnotationsValidator />
+                        <div class="mb-3">
+                            <label class="form-label">Ad</label>
+                            <InputText class="form-control" @bind-Value="newEmployee.Name" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Soyad</label>
+                            <InputText class="form-control" @bind-Value="newEmployee.Surname" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <InputText class="form-control" @bind-Value="newEmployee.Email" />
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Telefon</label>
+                            <InputText class="form-control" @bind-Value="newEmployee.PhoneNumber" />
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary">Kaydet</button>
+                            <button type="button" class="btn btn-secondary" @onclick="CloseAddModal">Geri Dön</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
     private List<EmployeeViewModel> Employees;
@@ -60,6 +135,14 @@
     private DateTime? SelectedDate;
     private string? SuccessMessage;
     private string? ErrorMessage;
+
+    private List<ExtraViewModel> Extras = new();
+    private HashSet<Guid> SelectedExtraIds = new();
+    private bool ShowExtras = false;
+
+    // Modal için
+    private bool showAddModal = false;
+    private EmployeeCreateViewModel newEmployee = new();
 
     // Sadece bu ay ve bugüne kadar olan günler seçilebilsin
     private DateTime MinDate => new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
@@ -70,12 +153,27 @@
     protected override async Task OnInitializedAsync()
     {
         Employees = await EmployeeService.GetEmployeesAsync();
+        Extras = await ExtraService.GetAllExtrasAsync();
         SelectedDate = DateTime.Now.Date; // Tarih inputunda bugünün tarihi seçili gelsin
     }
 
     private void SelectEmployee(Guid employeeId)
     {
         SelectedEmployeeId = employeeId;
+    }
+
+    private void ToggleExtras()
+    {
+        ShowExtras = !ShowExtras;
+    }
+
+    private void OnExtraChanged(ChangeEventArgs e, Guid extraId)
+    {
+        var isChecked = (bool?)e.Value ?? false;
+        if (isChecked)
+            SelectedExtraIds.Add(extraId);
+        else
+            SelectedExtraIds.Remove(extraId);
     }
 
     private async Task SaveMealRecord()
@@ -96,12 +194,16 @@
                 {
                     EmployeeId = SelectedEmployeeId,
                     MealDate = DateOnly.FromDateTime(SelectedDate.Value),
-                    IsEaten = true
+                    IsEaten = true,
+                    ExtraIds = SelectedExtraIds.ToList()
                 });
 
                 SuccessMessage = "Yemek kaydı başarıyla eklendi.";
                 SelectedEmployeeId = Guid.Empty;
                 SelectedDate = DateTime.Now.Date; // Kayıttan sonra tekrar bugünü seçili yap
+                SelectedExtraIds.Clear();
+                ShowExtras = false;
+                Employees = await EmployeeService.GetEmployeesAsync(); // Yeni çalışan eklenmişse güncelle
             }
             catch (Exception ex)
             {
@@ -117,5 +219,26 @@
                 }
             }
         }
+    }
+
+    // Modal işlemleri
+    private void ShowAddModal()
+    {
+        newEmployee = new EmployeeCreateViewModel();
+        showAddModal = true;
+    }
+
+    private void CloseAddModal()
+    {
+        showAddModal = false;
+    }
+
+    private async Task AddEmployeeAsync()
+    {
+        newEmployee.IsActive = true;
+        await EmployeeService.AddEmployeeAsync(newEmployee);
+        Employees = await EmployeeService.GetEmployeesAsync();
+        showAddModal = false;
+        StateHasChanged();
     }
 }

@@ -48,7 +48,7 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
                         m => m.EmployeeId == request.EmployeeId && m.MealDate == request.MealDate)).FirstOrDefault();
 
                     if (existingRecord != null)
-                        return new ServiceResponse<Guid>("Meal record already exists for this date.");
+                        return new ServiceResponse<Guid>("Meal record already exists for this date and this user.");
 
 
                     var mealRecord = _mapper.Map<MealRecordEntity>(request);

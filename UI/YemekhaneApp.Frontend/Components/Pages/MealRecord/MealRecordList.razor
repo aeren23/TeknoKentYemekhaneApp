@@ -4,20 +4,151 @@
 @inject MealRecordService MealRecordService
 @inject NavigationManager NavigationManager
 
-<h3>Yemek Yenen Günler</h3>
+@code {
+    private List<MealRecordViewModel>? allMealRecords = new();
+    private List<MealRecordViewModel>? filteredMealDays = new();
+    private int selectedYear = DateTime.Now.Year;
+    private int selectedMonth = DateTime.Now.Month;
+    private bool showAll = false;
+    private List<int> Years = Enumerable.Range(DateTime.Now.Year - 5, 6).ToList();
+    private int rowIndex = 0;
 
-@if (uniqueMealDays is null)
+    private int SelectedYear
+    {
+        get => selectedYear;
+        set
+        {
+            if (selectedYear != value)
+            {
+                selectedYear = value;
+                showAll = false;
+                _ = FilterMealDays();
+            }
+        }
+    }
+
+    private int SelectedMonth
+    {
+        get => selectedMonth;
+        set
+        {
+            if (selectedMonth != value)
+            {
+                selectedMonth = value;
+                showAll = false;
+                _ = FilterMealDays();
+            }
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        allMealRecords = await MealRecordService.GetMealRecordsAsync();
+        await FilterMealDays();
+    }
+
+    private async Task FilterMealDays()
+    {
+        if (allMealRecords is null)
+        {
+            filteredMealDays = new List<MealRecordViewModel>();
+            return;
+        }
+
+        if (showAll)
+        {
+            filteredMealDays = allMealRecords
+                .GroupBy(x => x.MealDate)
+                .Select(g => g.FirstOrDefault())
+                .OrderByDescending(x => x.MealDate)
+                .ToList();
+        }
+        else
+        {
+            filteredMealDays = allMealRecords
+                .Where(r => r.MealDate.Year == SelectedYear && r.MealDate.Month == SelectedMonth)
+                .GroupBy(x => x.MealDate)
+                .Select(g => g.FirstOrDefault())
+                .OrderByDescending(x => x.MealDate)
+                .ToList();
+        }
+        rowIndex = 0;
+        StateHasChanged();
+    }
+
+    private async Task ShowAllRecords()
+    {
+        showAll = true;
+        await FilterMealDays();
+    }
+
+    private async Task ShowCurrentMonth()
+    {
+        showAll = false;
+        SelectedYear = DateTime.Now.Year;
+        SelectedMonth = DateTime.Now.Month;
+        await FilterMealDays();
+    }
+
+    private void GoToDetail(Guid id)
+    {
+        NavigationManager.NavigateTo($"/mealrecords/{id}");
+    }
+}
+
+<h3 class="mb-4">Yemek Yenen Günler</h3>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <form class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="yearSelect" class="col-form-label fw-semibold">Yıl:</label>
+            </div>
+            <div class="col-auto">
+                <select id="yearSelect" class="form-select" style="min-width: 90px;" @bind="SelectedYear" disabled="@showAll">
+                    @foreach (var year in Years)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <label for="monthSelect" class="col-form-label fw-semibold">Ay:</label>
+            </div>
+            <div class="col-auto">
+                <select id="monthSelect" class="form-select" style="min-width: 90px;" @bind="SelectedMonth" disabled="@showAll">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m">@m.ToString("00")</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" @onclick="ShowCurrentMonth" disabled="@(!showAll)">
+                    Bu Ayı Göster
+                </button>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-secondary" @onclick="ShowAllRecords" disabled="@showAll">
+                    Tüm Kayıtları Göster
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (filteredMealDays is null)
 {
     <div class="alert alert-info">Yükleniyor...</div>
 }
-else if (!uniqueMealDays.Any())
+else if (!filteredMealDays.Any())
 {
-    <div class="alert alert-warning">Hiç yemek yenen gün bulunamadı.</div>
+    <div class="alert alert-warning">Kayıt bulunamadı.</div>
 }
 else
 {
     <div class="table-responsive">
-        <table class="table table-bordered table-striped align-middle">
+        <table class="table table-bordered table-striped align-middle shadow-sm">
             <thead class="table-dark">
                 <tr>
                     <th>#</th>
@@ -26,7 +157,7 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var record in uniqueMealDays)
+                @foreach (var record in filteredMealDays)
                 {
                     <tr>
                         <td>@(++rowIndex)</td>
@@ -41,31 +172,4 @@ else
             </tbody>
         </table>
     </div>
-}
-
-@code {
-    private List<MealRecordViewModel>? uniqueMealDays;
-    private int rowIndex = 0;
-
-    protected override async Task OnInitializedAsync()
-    {
-        var mealRecords = await MealRecordService.GetMealRecordsAsync();
-        if (mealRecords == null || !mealRecords.Any())
-        {
-            uniqueMealDays = new List<MealRecordViewModel>();
-            return;
-        }
-
-        // Sadece yemek yenen günleri (IsEaten == true) ve her günü bir kez al
-        uniqueMealDays = mealRecords
-            .GroupBy(x => x.MealDate)
-            .Select(g => g.FirstOrDefault())
-            .OrderByDescending(x => x.MealDate)
-            .ToList();
-    }
-
-    private void GoToDetail(Guid id)
-    {
-        NavigationManager.NavigateTo($"/mealrecords/{id}");
-    }
 }

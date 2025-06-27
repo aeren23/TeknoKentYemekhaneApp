@@ -31,6 +31,8 @@ var connectionString = builder.Configuration.GetConnectionString("YemekhaneDb")
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+builder.Services.AddHostedService<MonthlyDebtJobService>();
+
 // CORS eklemesi
 builder.Services.AddCors(opt =>
 {

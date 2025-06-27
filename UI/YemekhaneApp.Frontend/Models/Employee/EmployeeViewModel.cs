@@ -1,4 +1,6 @@
-﻿namespace YemekhaneApp.Frontend.Models.Employee
+﻿using YemekhaneApp.Frontend.Models.UserDebt;
+
+namespace YemekhaneApp.Frontend.Models.Employee
 {
     public class EmployeeViewModel
     {
@@ -9,5 +11,6 @@
         public string PhoneNumber { get; set; }
         public bool IsActive { get; set; }
         public int TotalMealCount { get; set; }
+        public List<UserDebtViewModel> UserDebts { get; set; } = new();
     }
 }

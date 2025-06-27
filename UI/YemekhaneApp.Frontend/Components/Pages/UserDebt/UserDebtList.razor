@@ -2,7 +2,7 @@
 @using YemekhaneApp.Frontend.Models.Employee
 @inject YemekhaneApp.Frontend.Services.UserDebtService UserDebtService
 @inject NavigationManager NavigationManager
-
+@inject IJSRuntime JS
 
 <h3 class="mb-4">Borçlu Kullanıcılar</h3>
 
@@ -27,6 +27,7 @@ else
                     <th>Ad</th>
                     <th>Soyad</th>
                     <th>Email</th>
+                    <th>Toplam Borç</th>
                     <th>Detay</th>
                 </tr>
             </thead>
@@ -38,13 +39,18 @@ else
                         <td>@employee.Surname</td>
                         <td>@employee.Email</td>
                         <td>
-                            <button class="btn btn-outline-primary btn-sm"
-                                    @onclick="() => NavigateToDetail(employee.Id)">
-                                <i class="bi bi-search"></i> Detay
-                            </button>
-                        </td>
-                    </tr>
-                }
+                            @((employee.UserDebts != null && employee.UserDebts.Any())
+                                                ? employee.UserDebts.Sum(d => d.Amount).ToString("C2")
+                                                : "0 ₺")
+                </td>
+                <td>
+                    <button class="btn btn-outline-primary btn-sm"
+                            @onclick="() => NavigateToDetail(employee.Id)">
+                        <i class="bi bi-search"></i> Detay
+                    </button>
+                </td>
+            </tr>
+                        }
             </tbody>
         </table>
     </div>

@@ -93,5 +93,11 @@ namespace YemekhaneApp.Frontend.Services
         {
             await _httpClient.DeleteAsync($"api/mealrecord/{id}");
         }
+
+        public async Task DeleteAllMealRecordsByMonthAsync(int year, int month)
+        {
+            var response = await _httpClient.DeleteAsync($"api/mealrecord/year/{year}/month/{month}");
+            response.EnsureSuccessStatusCode();
+        }
     }
 }
