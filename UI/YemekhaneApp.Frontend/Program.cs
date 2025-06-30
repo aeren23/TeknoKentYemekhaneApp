@@ -26,7 +26,7 @@ builder.Services.AddDataProtection()
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>
     {
-        options.LoginPath = "/login"; // Login sayfanýz
+        options.LoginPath = "/login"; 
         options.AccessDeniedPath = "/access-denied";
         options.ExpireTimeSpan = TimeSpan.FromDays(30);
     });

@@ -72,5 +72,10 @@ namespace YemekhaneApp.Frontend.Services
 
             return claims;
         }
+
+        public void SetToken()
+        {
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
     }
 }
