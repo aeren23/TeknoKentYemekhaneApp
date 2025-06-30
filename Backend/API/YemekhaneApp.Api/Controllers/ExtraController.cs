@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using YemekhaneApp.Application.CQRS.Commands.Extra;
 using YemekhaneApp.Application.CQRS.Queries.Extra;
@@ -7,6 +8,7 @@ namespace YemekhaneApp.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class ExtraController : ControllerBase
     {
         private readonly IMediator _mediator;

@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.DataProtection;
 using YemekhaneApp.Frontend.Components;
 using YemekhaneApp.Frontend.Services;
@@ -8,8 +10,34 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 
+// Circuit options for detailed errors
+builder.Services.Configure<CircuitOptions>(options =>
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        options.DetailedErrors = true;
+    }
+});
+
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
+
+// Minimal Authentication (sadece [Authorize] çalýþmasý için)
+builder.Services.AddAuthentication("Cookies")
+    .AddCookie("Cookies", options =>
+    {
+        options.LoginPath = "/login"; // Login sayfanýz
+        options.AccessDeniedPath = "/access-denied";
+        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+    });
+
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddAuthorizationCore();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+
+builder.Services.AddScoped<CookieAuthTokenMessageHandler>();
 
 
 var apiHttpUrl = Environment.GetEnvironmentVariable("SERVICES__API__HTTP__0");
@@ -26,19 +54,24 @@ if (apiBaseUrl == null)
 builder.Services.AddHttpClient<EmployeeService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-});
+}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<MealRecordService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-});
+}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<UserDebtService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-});
+}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<ExtraService>(client =>
+{
+    client.BaseAddress = new Uri(apiBaseUrl);
+}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+
+builder.Services.AddHttpClient<AuthService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
 });
@@ -54,10 +87,15 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+
 //app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

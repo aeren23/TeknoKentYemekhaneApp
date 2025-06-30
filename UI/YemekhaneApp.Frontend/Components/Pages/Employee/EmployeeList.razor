@@ -1,9 +1,13 @@
 ﻿@page "/employees"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Employee
 @using YemekhaneApp.Frontend.Services
 @inject EmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+
+@attribute [Authorize]
+
 
 <div class="container mt-5">
     <div class="row justify-content-center">

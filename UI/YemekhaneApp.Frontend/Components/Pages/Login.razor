@@ -1,0 +1,76 @@
+﻿@page "/login"
+@using YemekhaneApp.Frontend.Models.Auth
+@using YemekhaneApp.Frontend.Services
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+@inject IJSRuntime JSRuntime
+
+<h3>Giriş Yap</h3>
+
+@if (!string.IsNullOrEmpty(ErrorMessage))
+{
+    <p style="color:red">@ErrorMessage</p>
+}
+
+<input @bind="Password" type="password" placeholder="Şifre" />
+<button @onclick="LoginAsync">Giriş Yap</button>
+
+@code {
+    private string Password { get; set; }
+    private string ErrorMessage { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                // Token var mı kontrol et
+                var token = await JSRuntime.InvokeAsync<string>("eval", "localStorage.getItem('jwtToken')");
+                if (!string.IsNullOrEmpty(token))
+                {
+                    // Token varsa ana sayfaya yönlendir
+                    Navigation.NavigateTo("/");
+                    return;
+                }
+
+                // Token yoksa trusted cihaz kontrolü yap
+                var userAgent = await JSRuntime.InvokeAsync<string>("getUserAgent");
+                var trustedResult = await AuthService.IsTrustedUserAgent(userAgent);
+
+                if (trustedResult != null)
+                {
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "jwtToken", trustedResult.Token);
+                    Navigation.NavigateTo("/");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Auto-login error: {ex.Message}");
+            }
+        }
+    }
+
+    private async Task LoginAsync()
+    {
+        var request = new AuthRequestViewModel
+        {
+            Password = Password
+        };
+
+        var result = await AuthService.Authenticate(request);
+
+        if (result != null)
+        {
+            // JavaScript ile cookie set et
+            await JSRuntime.InvokeVoidAsync("eval",
+                $"document.cookie = 'AuthToken={result.Token}; path=/; secure; samesite=strict; max-age={60 * 60 * 24 * 7}';");
+
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            ErrorMessage = "Şifre hatalı.";
+        }
+    }
+}

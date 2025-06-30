@@ -1,4 +1,5 @@
 ﻿@page "/employee-mealrecords/{EmployeeId:guid}"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Employee
 @using YemekhaneApp.Frontend.Models.MealRecord
 @using YemekhaneApp.Frontend.Models.Extra
@@ -6,6 +7,9 @@
 @inject MealRecordService MealRecordService
 @inject EmployeeService EmployeeService
 @inject IJSRuntime JS
+
+@attribute [Authorize]
+
 
 @code {
     [Parameter]

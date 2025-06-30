@@ -1,4 +1,43 @@
-﻿@inherits LayoutComponentBase
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@using YemekhaneApp.Frontend.Models.Auth
+@using YemekhaneApp.Frontend.Services
+@inherits LayoutComponentBase
+
+@inject IJSRuntime JS
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject AuthService AuthService
+@inject AuthenticationStateProvider AuthStateProvider
+
+@code {
+    private bool _initialized = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // if (firstRender && !_initialized)
+        // {
+        //     _initialized = true;
+
+        //     // JWT token'ı localStorage'dan oku ve provider'a bildir
+        //     var token = await JS.InvokeAsync<string>("localStorage.getItem", "jwtToken");
+        //     ((CustomAuthStateProvider)AuthStateProvider).SetToken(token);
+
+        //     // User-agent kontrolü (varsa)
+        //     var userAgent = await JS.InvokeAsync<string>("getUserAgent");
+        //     var result = await AuthService.IsTrustedUserAgent(userAgent);
+        //     if (result != null)
+        //     {
+        //         await JS.InvokeVoidAsync("localStorage.setItem", "jwtToken", result.Token);
+        //         ((CustomAuthStateProvider)AuthStateProvider).SetToken(result.Token);
+        //         Navigation.NavigateTo("/", true);
+        //     }
+        //     else
+        //     {
+        //         Navigation.NavigateTo("/login", true);
+        //     }
+        // }
+    }
+}
 
 <div class="page">
     <div class="sidebar">

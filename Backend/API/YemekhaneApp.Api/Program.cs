@@ -1,6 +1,9 @@
 using Aspire.Hosting.ApplicationModel; // Gerekli Aspire namespace'i
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using YemekhaneApp.Application;
 using YemekhaneApp.Persistence;
 using YemekhaneApp.Persistence.Context;
@@ -21,6 +24,22 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddPersistenceServices(builder.Configuration.GetConnectionString("YemekhaneDb")); 
 builder.Services.AddApplicationRegistration();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])),
+        ValidateIssuer = false,
+        ValidateAudience = false
+    };
+});
 
 // Aspire ile gelen connection string'i kullanmak i�in:
 // var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__YemekhaneDb");
@@ -61,6 +80,8 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseCors("EmployeeApiCors"); // CORS middleware
+
+app.UseAuthentication();
 
 app.UseAuthorization();
 

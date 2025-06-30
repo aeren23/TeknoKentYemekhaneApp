@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using YemekhaneApp.Application.CQRS.Commands.MealRecord;
@@ -8,6 +9,7 @@ namespace YemekhaneApp.Api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MealRecordController : ControllerBase
     {
         private readonly IMediator _mediator;

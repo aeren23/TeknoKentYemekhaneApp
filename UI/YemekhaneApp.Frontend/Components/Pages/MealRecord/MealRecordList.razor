@@ -1,8 +1,12 @@
 ﻿@page "/mealrecords"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.MealRecord
 @using YemekhaneApp.Frontend.Services
 @inject MealRecordService MealRecordService
 @inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
 
 @code {
     private List<MealRecordViewModel>? allMealRecords = new();

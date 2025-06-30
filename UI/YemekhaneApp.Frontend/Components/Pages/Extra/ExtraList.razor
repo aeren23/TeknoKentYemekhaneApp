@@ -1,9 +1,13 @@
 ﻿@page "/extralar"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Extra
 @using YemekhaneApp.Frontend.Services
 @inject ExtraService ExtraService
 @inject NavigationManager NavigationManager
 @using Microsoft.JSInterop
+
+
+@attribute [Authorize]
 
 <h3>Ekstra Ürünler</h3>
 

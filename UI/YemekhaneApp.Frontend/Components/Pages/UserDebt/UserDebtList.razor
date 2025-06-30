@@ -1,8 +1,12 @@
 ﻿@page "/userdebts"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Employee
 @inject YemekhaneApp.Frontend.Services.UserDebtService UserDebtService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+
+@attribute [Authorize]
+
 
 <h3 class="mb-4">Borçlu Kullanıcılar</h3>
 

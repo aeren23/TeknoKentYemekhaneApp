@@ -1,9 +1,13 @@
 ﻿@page "/extralar/duzenle/{Id:guid}"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Extra
 @using YemekhaneApp.Frontend.Services
 @using Microsoft.AspNetCore.Components.Forms
 @inject ExtraService ExtraService
 @inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
 
 <h3>Ekstra Düzenle</h3>
 

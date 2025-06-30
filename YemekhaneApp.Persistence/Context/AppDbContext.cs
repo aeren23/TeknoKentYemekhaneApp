@@ -19,6 +19,7 @@ namespace YemekhaneApp.Persistence.Context
         public DbSet<MealRecord> MealRecords { get; set; }
         public DbSet<UserDebt> UserDebts { get; set; }
         public DbSet<Extra> Extras { get; set; } 
+        public DbSet<TrustedDevice> TrustedDevices { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

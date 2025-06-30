@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Employee
 @using YemekhaneApp.Frontend.Models.Extra
 @using YemekhaneApp.Frontend.Services
@@ -6,6 +7,9 @@
 @inject MealRecordService MealRecordService
 @inject ExtraService ExtraService
 @inject IJSRuntime JS
+
+@attribute [Authorize]
+
 
 <div class="container mt-5">
     <div class="row justify-content-center">

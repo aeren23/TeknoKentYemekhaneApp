@@ -1,8 +1,12 @@
 ﻿@page "/employee/update/{Id:guid}"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Employee
 @using YemekhaneApp.Frontend.Services
 @inject EmployeeService EmployeeService
 @inject NavigationManager NavigationManager
+
+@attribute [Authorize]
+
 
 <h3>Çalışan Güncelle</h3>
 
