@@ -1,3 +1,4 @@
+using Blazored.SessionStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.DataProtection;
@@ -19,25 +20,47 @@ builder.Services.Configure<CircuitOptions>(options =>
     }
 });
 
+
+//-------------------
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromMinutes(30);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+
+
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
 
-// Minimal Authentication (sadece [Authorize] çalýþmasý için)
+builder.Services.AddBlazoredSessionStorage();
+//// Minimal Authentication (sadece [Authorize] çalýþmasý için)
+//builder.Services.AddAuthentication("Cookies")
+//    .AddCookie("Cookies", options =>
+//    {
+//        options.LoginPath = "/login"; 
+//        options.AccessDeniedPath = "/access-denied";
+//        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+//    });
+
 builder.Services.AddAuthentication("Cookies")
     .AddCookie("Cookies", options =>
     {
-        options.LoginPath = "/login"; 
-        options.AccessDeniedPath = "/access-denied";
-        options.ExpireTimeSpan = TimeSpan.FromDays(30);
+        options.LoginPath = "/login";
     });
 
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddAuthorization();
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthenticationStateProvider>();
+builder.Services.AddCascadingAuthenticationState();
 
-builder.Services.AddScoped<CookieAuthTokenMessageHandler>();
+builder.Services.AddScoped<JwtAuthTokenMessageHandler>();
 
 
 var apiHttpUrl = Environment.GetEnvironmentVariable("SERVICES__API__HTTP__0");
@@ -54,22 +77,22 @@ if (apiBaseUrl == null)
 builder.Services.AddHttpClient<EmployeeService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<MealRecordService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<UserDebtService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<ExtraService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<AuthService>(client =>
 {
@@ -87,7 +110,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-
+app.UseSession();
 //app.UseHttpsRedirection();
 
 app.UseStaticFiles();

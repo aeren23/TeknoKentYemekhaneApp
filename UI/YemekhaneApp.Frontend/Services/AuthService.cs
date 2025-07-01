@@ -1,6 +1,6 @@
-﻿using Microsoft.JSInterop;
+﻿using Blazored.SessionStorage;
+using Microsoft.JSInterop;
 using YemekhaneApp.Frontend.Models.Auth;
-using static System.Net.WebRequestMethods;
 
 namespace YemekhaneApp.Frontend.Services
 {
@@ -8,12 +8,13 @@ namespace YemekhaneApp.Frontend.Services
     {
         private readonly HttpClient _httpClient;
         private readonly IJSRuntime _jsRuntime;
+        private readonly ISessionStorageService _sessionStorageService;
 
-
-        public AuthService(HttpClient httpClient, IJSRuntime jsRuntime)
+        public AuthService(HttpClient httpClient, IJSRuntime jsRuntime, ISessionStorageService sessionStorageService)
         {
             _httpClient = httpClient;
             _jsRuntime = jsRuntime;
+            _sessionStorageService = sessionStorageService;
         }
 
         public async Task<AuthResponseViewModel> IsTrustedUserAgent(string userAgent)
@@ -41,9 +42,28 @@ namespace YemekhaneApp.Frontend.Services
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<AuthResponseViewModel>();
+                if (result != null && !string.IsNullOrEmpty(result.Token))
+                {
+                    await _sessionStorageService.SetItemAsync("token", result.Token);
+                }
                 return result;
             }
             return null;
+        }
+
+        public async Task LogoutAsync()
+        {
+            await _sessionStorageService.RemoveItemAsync("token");
+        }
+
+        public async Task<string> GetTokenFromSessionAsync()
+        {
+            return await _sessionStorageService.GetItemAsync<string>("token");
+        }
+
+        public async Task SetTokenToSessionAsync(string token)
+        {
+            await _sessionStorageService.SetItemAsync("token", token);
         }
     }
 }
