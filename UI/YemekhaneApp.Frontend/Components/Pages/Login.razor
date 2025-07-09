@@ -1,76 +1,81 @@
 ﻿@page "/login"
 @using YemekhaneApp.Frontend.Models.Auth
-@using YemekhaneApp.Frontend.Services
+@using YemekhaneApp.Frontend.Security
 @inject NavigationManager Navigation
-@inject AuthService AuthService
-@inject IJSRuntime JSRuntime
+@inject CustomAuthenticationStateProvider AuthStateProvider
 
-<h3>Giriş Yap</h3>
-
-@if (!string.IsNullOrEmpty(ErrorMessage))
-{
-    <p style="color:red">@ErrorMessage</p>
-}
-
-<input @bind="Password" type="password" placeholder="Şifre" />
-<button @onclick="LoginAsync">Giriş Yap</button>
+<div class="container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white text-center">
+                <h3 class="mb-0"><i class="bi bi-person-circle me-2"></i>Giriş Yap</h3>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-danger text-center">@ErrorMessage</div>
+                }
+                <EditForm Model="authRequest" OnValidSubmit="HandleLogin">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Şifre</label>
+                        <InputText @bind-Value="authRequest.Password" type="password" class="form-control form-control-lg" />
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" disabled="@IsLoading">
+                            @if (IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <p>Giriş Yapılıyor...</p>
+                                                        }
+                            else
+                            {
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                <p>Giriş Yap</p>
+                                                        }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
 
 @code {
-    private string Password { get; set; }
-    private string ErrorMessage { get; set; }
+    private AuthRequestViewModel authRequest = new();
+    private string ErrorMessage;
+    private bool IsLoading;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            try
+            var isTrusted = await AuthStateProvider.AuthenticateTrustedUserAsync();
+            if (isTrusted)
             {
-                // Token var mı kontrol et
-                var token = await JSRuntime.InvokeAsync<string>("eval", "localStorage.getItem('jwtToken')");
-                if (!string.IsNullOrEmpty(token))
-                {
-                    // Token varsa ana sayfaya yönlendir
-                    Navigation.NavigateTo("/");
-                    return;
-                }
-
-                // Token yoksa trusted cihaz kontrolü yap
-                var userAgent = await JSRuntime.InvokeAsync<string>("getUserAgent");
-                var trustedResult = await AuthService.IsTrustedUserAgent(userAgent);
-
-                if (trustedResult != null)
-                {
-                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "jwtToken", trustedResult.Token);
-                    Navigation.NavigateTo("/");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Auto-login error: {ex.Message}");
+                Navigation.NavigateTo("/");
             }
         }
     }
 
-    private async Task LoginAsync()
+    private async Task HandleLogin()
     {
-        var request = new AuthRequestViewModel
+        IsLoading = true;
+        ErrorMessage = null;
+        StateHasChanged();
+
+        var success = await AuthStateProvider.AuthenticateUser(authRequest);
+        if (success)
         {
-            Password = Password
-        };
-
-        var result = await AuthService.Authenticate(request);
-
-        if (result != null)
-        {
-            // JavaScript ile cookie set et
-            await JSRuntime.InvokeVoidAsync("eval",
-                $"document.cookie = 'AuthToken={result.Token}; path=/; secure; samesite=strict; max-age={60 * 60 * 24 * 7}';");
-
             Navigation.NavigateTo("/");
         }
         else
         {
             ErrorMessage = "Şifre hatalı.";
         }
+
+        IsLoading = false;
+        StateHasChanged();
     }
 }

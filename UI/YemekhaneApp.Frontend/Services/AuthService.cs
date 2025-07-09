@@ -1,19 +1,14 @@
-﻿using Microsoft.JSInterop;
-using YemekhaneApp.Frontend.Models.Auth;
-using static System.Net.WebRequestMethods;
+﻿using YemekhaneApp.Frontend.Models.Auth;
 
 namespace YemekhaneApp.Frontend.Services
 {
     public class AuthService
     {
         private readonly HttpClient _httpClient;
-        private readonly IJSRuntime _jsRuntime;
 
-
-        public AuthService(HttpClient httpClient, IJSRuntime jsRuntime)
+        public AuthService(HttpClient httpClient)
         {
             _httpClient = httpClient;
-            _jsRuntime = jsRuntime;
         }
 
         public async Task<AuthResponseViewModel> IsTrustedUserAgent(string userAgent)
@@ -22,26 +17,23 @@ namespace YemekhaneApp.Frontend.Services
 
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<AuthResponseViewModel>();
-                return result;
+                return await response.Content.ReadFromJsonAsync<AuthResponseViewModel>();
             }
             return null;
         }
 
-        public async Task<AuthResponseViewModel> Authenticate(AuthRequestViewModel password)
+        public async Task<AuthResponseViewModel> Authenticate(AuthRequestViewModel requestModel, string userAgent)
         {
-            var userAgent = await _jsRuntime.InvokeAsync<string>("getUserAgent");
             var request = new HttpRequestMessage(HttpMethod.Post, "api/auth/login")
             {
-                Content = JsonContent.Create(password)
+                Content = JsonContent.Create(requestModel)
             };
             request.Headers.Add("User-Agent", userAgent);
 
             var response = await _httpClient.SendAsync(request);
             if (response.IsSuccessStatusCode)
             {
-                var result = await response.Content.ReadFromJsonAsync<AuthResponseViewModel>();
-                return result;
+                return await response.Content.ReadFromJsonAsync<AuthResponseViewModel>();
             }
             return null;
         }

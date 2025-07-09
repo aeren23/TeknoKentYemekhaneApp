@@ -8,6 +8,6 @@ namespace YemekhaneApp.Application.Services.Token
 {
     public interface ITokenService
     {
-        string GenerateToken();
+        string GenerateToken(string username);
     }
 }

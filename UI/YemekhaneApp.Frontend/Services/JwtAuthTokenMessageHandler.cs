@@ -3,25 +3,25 @@ using Microsoft.AspNetCore.Http;
 
 namespace YemekhaneApp.Frontend.Services
 {
-    public class CookieAuthTokenMessageHandler : DelegatingHandler
+    public class JwtAuthTokenMessageHandler : DelegatingHandler
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CookieAuthTokenMessageHandler(IHttpContextAccessor httpContextAccessor)
+        public JwtAuthTokenMessageHandler(IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
         }
 
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var token = _httpContextAccessor.HttpContext?.Request.Cookies["AuthToken"];
+            var token = _httpContextAccessor.HttpContext?.Request.Cookies["auth_token"];
 
             if (!string.IsNullOrWhiteSpace(token))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
 
-            return base.SendAsync(request, cancellationToken);
+            return await base.SendAsync(request, cancellationToken);
         }
     }
 }

@@ -44,7 +44,7 @@ else
                         <td>@employee.Email</td>
                         <td>
                             @((employee.UserDebts != null && employee.UserDebts.Any())
-                                                ? employee.UserDebts.Sum(d => d.Amount).ToString("C2")
+                                                ? employee.UserDebts.Where(ud => ud.IsPaid==false).Sum(d => d.Amount).ToString("C2")
                                                 : "0 ₺")
                 </td>
                 <td>

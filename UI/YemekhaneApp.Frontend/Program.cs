@@ -1,7 +1,10 @@
+using Blazored.SessionStorage;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.DataProtection;
 using YemekhaneApp.Frontend.Components;
+using YemekhaneApp.Frontend.Helpers;
+using YemekhaneApp.Frontend.Security;
 using YemekhaneApp.Frontend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,25 +22,33 @@ builder.Services.Configure<CircuitOptions>(options =>
     }
 });
 
+
+
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo("/root/.aspnet/DataProtection-Keys"));
 
-// Minimal Authentication (sadece [Authorize] çalýþmasý için)
-builder.Services.AddAuthentication("Cookies")
-    .AddCookie("Cookies", options =>
-    {
-        options.LoginPath = "/login"; // Login sayfanýz
-        options.AccessDeniedPath = "/access-denied";
-        options.ExpireTimeSpan = TimeSpan.FromDays(30);
-    });
+
+
 
 
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddAuthorizationCore();
-builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+builder.Services.AddScoped<CustomAuthenticationStateComponent>();
+builder.Services.AddScoped<CookieHelper>();
+builder.Services.AddScoped<UserAgentHelper>();
 
-builder.Services.AddScoped<CookieAuthTokenMessageHandler>();
+
+builder.Services.AddAuthentication()
+    .AddScheme<CustomOptions, CustomAuthenticationHandler>("CustomAuth", options => { });
+
+builder.Services.AddScoped<CustomAuthenticationStateProvider>();
+builder.Services.AddScoped<AuthenticationStateProvider>(provider =>
+    provider.GetRequiredService<CustomAuthenticationStateProvider>());
+
+builder.Services.AddCascadingAuthenticationState();
+
+builder.Services.AddScoped<JwtAuthTokenMessageHandler>();
 
 
 var apiHttpUrl = Environment.GetEnvironmentVariable("SERVICES__API__HTTP__0");
@@ -54,22 +65,22 @@ if (apiBaseUrl == null)
 builder.Services.AddHttpClient<EmployeeService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<MealRecordService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<UserDebtService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<ExtraService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-}).AddHttpMessageHandler<CookieAuthTokenMessageHandler>();
+}).AddHttpMessageHandler<JwtAuthTokenMessageHandler>();
 
 builder.Services.AddHttpClient<AuthService>(client =>
 {
@@ -85,16 +96,12 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
 
 
-//app.UseHttpsRedirection();
-
 app.UseStaticFiles();
 app.UseAntiforgery();
-
-app.UseAuthentication();
-app.UseAuthorization();
 
 
 app.MapRazorComponents<App>()
