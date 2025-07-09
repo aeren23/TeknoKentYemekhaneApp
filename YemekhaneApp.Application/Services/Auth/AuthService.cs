@@ -45,7 +45,7 @@ namespace YemekhaneApp.Application.Services
                 await _unitOfWork.SaveAsync();
             }
 
-            var token = _tokenService.GenerateToken();
+            var token = _tokenService.GenerateToken("defaultuser");
 
             return new AuthResponseDto { Token = token };
         }
@@ -59,7 +59,7 @@ namespace YemekhaneApp.Application.Services
 
         public string GenerateQuickToken()
         {
-            return _tokenService.GenerateToken();
+            return _tokenService.GenerateToken("defaultuser");
         }
     }
 }

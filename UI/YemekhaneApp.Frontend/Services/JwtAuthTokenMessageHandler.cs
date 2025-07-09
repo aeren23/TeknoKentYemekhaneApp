@@ -1,24 +1,26 @@
 ﻿using System.Net.Http.Headers;
-using Blazored.SessionStorage;
+using Microsoft.AspNetCore.Http;
 
 namespace YemekhaneApp.Frontend.Services
 {
     public class JwtAuthTokenMessageHandler : DelegatingHandler
     {
-        private readonly ISessionStorageService _sessionStorageService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public JwtAuthTokenMessageHandler(ISessionStorageService sessionStorageService)
+        public JwtAuthTokenMessageHandler(IHttpContextAccessor httpContextAccessor)
         {
-            _sessionStorageService = sessionStorageService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            var token = await _sessionStorageService.GetItemAsync<string>("token");
+            var token = _httpContextAccessor.HttpContext?.Request.Cookies["auth_token"];
+
             if (!string.IsNullOrWhiteSpace(token))
             {
                 request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
             }
+
             return await base.SendAsync(request, cancellationToken);
         }
     }

@@ -1,11 +1,8 @@
 ﻿@page "/login"
-@using Microsoft.AspNetCore.Components.Authorization
 @using YemekhaneApp.Frontend.Models.Auth
-@using YemekhaneApp.Frontend.Services
+@using YemekhaneApp.Frontend.Security
 @inject NavigationManager Navigation
-@inject AuthService AuthService
-@inject IJSRuntime JSRuntime
-@inject AuthenticationStateProvider AuthStateProvider
+@inject CustomAuthenticationStateProvider AuthStateProvider
 
 <div class="container d-flex align-items-center justify-content-center min-vh-100">
     <div class="col-md-5 col-lg-4">
@@ -16,29 +13,27 @@
             <div class="card-body">
                 @if (!string.IsNullOrEmpty(ErrorMessage))
                 {
-                    <div class="alert alert-danger text-center" role="alert">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i>@ErrorMessage
-                    </div>
+                    <div class="alert alert-danger text-center">@ErrorMessage</div>
                 }
-                <EditForm Model="authRequest" OnValidSubmit="HandleValidSubmit">
+                <EditForm Model="authRequest" OnValidSubmit="HandleLogin">
                     <DataAnnotationsValidator />
                     <ValidationSummary />
                     <div class="mb-3">
-                        <label for="passwordInput" class="form-label fw-semibold">Şifre</label>
-                        <InputText id="passwordInput" @bind-Value="authRequest.Password" type="password" class="form-control form-control-lg" placeholder="Şifrenizi girin" autocomplete="current-password" required />
+                        <label class="form-label fw-semibold">Şifre</label>
+                        <InputText @bind-Value="authRequest.Password" type="password" class="form-control form-control-lg" />
                     </div>
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg" disabled="@IsLoading">
                             @if (IsLoading)
                             {
-                                <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-                                <span>Giriş Yapılıyor...</span>
-                            }
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <p>Giriş Yapılıyor...</p>
+                                                        }
                             else
                             {
                                 <i class="bi bi-box-arrow-in-right me-2"></i>
-                                <span>Giriş Yap</span>
-                            }
+                                <p>Giriş Yap</p>
+                                                        }
                         </button>
                     </div>
                 </EditForm>
@@ -49,59 +44,30 @@
 
 @code {
     private AuthRequestViewModel authRequest = new();
-    private string ErrorMessage { get; set; }
-    private bool IsLoading { get; set; }
-    private bool _trustedChecked = false;
+    private string ErrorMessage;
+    private bool IsLoading;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !_trustedChecked)
+        if (firstRender)
         {
-            _trustedChecked = true;
-
-            // 1. Token sessionStorage'da varsa, direkt giriş yap
-            var token = await AuthService.GetTokenFromSessionAsync();
-            if (!string.IsNullOrEmpty(token))
+            var isTrusted = await AuthStateProvider.AuthenticateTrustedUserAsync();
+            if (isTrusted)
             {
-                if (AuthStateProvider is CustomAuthenticationStateProvider customProvider)
-                    customProvider.AuthenticateUser(token);
-
-                Navigation.NavigateTo("/");
-                return;
-            }
-
-            // 2. Trusted device kontrolü
-            var userAgent = await JSRuntime.InvokeAsync<string>("getUserAgent");
-            var trustedResult = await AuthService.IsTrustedUserAgent(userAgent);
-
-            if (trustedResult != null && !string.IsNullOrEmpty(trustedResult.Token))
-            {
-                await AuthService.SetTokenToSessionAsync(trustedResult.Token);
-
-                if (AuthStateProvider is CustomAuthenticationStateProvider customProvider)
-                    customProvider.AuthenticateUser(trustedResult.Token);
-
                 Navigation.NavigateTo("/");
             }
-            // trustedResult null ise, kullanıcıdan şifre istenir (form gösterilir)
         }
     }
 
-    private async Task HandleValidSubmit()
+    private async Task HandleLogin()
     {
         IsLoading = true;
         ErrorMessage = null;
         StateHasChanged();
 
-        var result = await AuthService.Authenticate(authRequest);
-
-        if (result != null && !string.IsNullOrEmpty(result.Token))
+        var success = await AuthStateProvider.AuthenticateUser(authRequest);
+        if (success)
         {
-            await AuthService.SetTokenToSessionAsync(result.Token);
-
-            if (AuthStateProvider is CustomAuthenticationStateProvider customProvider)
-                customProvider.AuthenticateUser(result.Token);
-
             Navigation.NavigateTo("/");
         }
         else
