@@ -22,6 +22,21 @@ namespace YemekhaneApp.Persistence.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ExtraMealRecord", b =>
+                {
+                    b.Property<Guid>("ExtrasId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("MealRecordsId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("ExtrasId", "MealRecordsId");
+
+                    b.HasIndex("MealRecordsId");
+
+                    b.ToTable("MealRecordExtras", (string)null);
+                });
+
             modelBuilder.Entity("YemekhaneApp.Domain.Entities.Employee", b =>
                 {
                     b.Property<Guid>("Id")
@@ -55,6 +70,24 @@ namespace YemekhaneApp.Persistence.Migrations
                     b.ToTable("Employees");
                 });
 
+            modelBuilder.Entity("YemekhaneApp.Domain.Entities.Extra", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Extras");
+                });
+
             modelBuilder.Entity("YemekhaneApp.Domain.Entities.MealRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -83,6 +116,24 @@ namespace YemekhaneApp.Persistence.Migrations
                     b.ToTable("MealRecords");
                 });
 
+            modelBuilder.Entity("YemekhaneApp.Domain.Entities.TrustedDevice", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserAgent")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TrustedDevices");
+                });
+
             modelBuilder.Entity("YemekhaneApp.Domain.Entities.UserDebt", b =>
                 {
                     b.Property<Guid>("Id")
@@ -109,6 +160,21 @@ namespace YemekhaneApp.Persistence.Migrations
                     b.HasIndex("EmployeeId");
 
                     b.ToTable("UserDebts");
+                });
+
+            modelBuilder.Entity("ExtraMealRecord", b =>
+                {
+                    b.HasOne("YemekhaneApp.Domain.Entities.Extra", null)
+                        .WithMany()
+                        .HasForeignKey("ExtrasId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("YemekhaneApp.Domain.Entities.MealRecord", null)
+                        .WithMany()
+                        .HasForeignKey("MealRecordsId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("YemekhaneApp.Domain.Entities.MealRecord", b =>

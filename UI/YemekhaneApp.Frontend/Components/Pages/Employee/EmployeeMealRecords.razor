@@ -1,71 +1,250 @@
 ﻿@page "/employee-mealrecords/{EmployeeId:guid}"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Employee
 @using YemekhaneApp.Frontend.Models.MealRecord
+@using YemekhaneApp.Frontend.Models.Extra
 @using YemekhaneApp.Frontend.Services
 @inject MealRecordService MealRecordService
 @inject EmployeeService EmployeeService
+@inject IJSRuntime JS
+
+@attribute [Authorize]
+
 
 @code {
     [Parameter]
     public Guid EmployeeId { get; set; }
 
-    private List<MealRecordViewModel>? mealRecords = new List<MealRecordViewModel>();
-    private int rowIndex = 0;
+    private List<MealRecordViewModel>? mealRecords = new();
     private string employeeFullName = string.Empty;
+    private Dictionary<Guid, bool> extrasCollapseState = new();
+    private const decimal MenuPrice = 150m;
+    private decimal totalMonthPrice = 0m;
+
+    private int selectedYear = DateTime.Now.Year;
+    private int selectedMonth = DateTime.Now.Month;
+    private bool showAll = false;
+    private List<int> Years = Enumerable.Range(DateTime.Now.Year - 5, 6).ToList();
+
+    private int SelectedYear
+    {
+        get => selectedYear;
+        set
+        {
+            if (selectedYear != value)
+            {
+                selectedYear = value;
+                showAll = false;
+                _ = LoadMealRecordsForMonth(selectedYear, selectedMonth);
+            }
+        }
+    }
+
+    private int SelectedMonth
+    {
+        get => selectedMonth;
+        set
+        {
+            if (selectedMonth != value)
+            {
+                selectedMonth = value;
+                showAll = false;
+                _ = LoadMealRecordsForMonth(selectedYear, selectedMonth);
+            }
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
-        mealRecords = await MealRecordService.GetMealRecordsByEmployeeIdAsync(EmployeeId);
-        rowIndex = 0;
+        await LoadEmployeeInfo();
+        await LoadMealRecordsForMonth(SelectedYear, SelectedMonth);
+    }
+
+    private async Task LoadEmployeeInfo()
+    {
         EmployeeViewModel? employee = await EmployeeService.GetEmployeeByIdAsync(EmployeeId);
         if (employee != null)
         {
             employeeFullName = $"{employee.Name} {employee.Surname}";
         }
     }
+
+    private async Task LoadMealRecordsForMonth(int year, int month)
+    {
+        var allRecords = await MealRecordService.GetMealRecordsByEmployeeIdAsync(EmployeeId);
+        mealRecords = allRecords
+            .Where(r => r.MealDate.Year == year && r.MealDate.Month == month)
+            .OrderBy(r => r.MealDate)
+            .ToList();
+        CalculateTotalMonthPrice();
+        StateHasChanged();
+    }
+
+    private async Task LoadAllMealRecords()
+    {
+        mealRecords = await MealRecordService.GetMealRecordsByEmployeeIdAsync(EmployeeId);
+        mealRecords = mealRecords.OrderBy(r => r.MealDate).ToList();
+        CalculateTotalMonthPrice();
+        StateHasChanged();
+    }
+
+    private async Task ShowAllRecords()
+    {
+        showAll = true;
+        await LoadAllMealRecords();
+    }
+
+    private async Task ShowCurrentMonth()
+    {
+        showAll = false;
+        SelectedYear = DateTime.Now.Year;
+        SelectedMonth = DateTime.Now.Month;
+        await LoadMealRecordsForMonth(SelectedYear, SelectedMonth);
+    }
+
     private async Task DeleteMealRecord(Guid mealRecordId)
     {
+        bool confirmed = await JS.InvokeAsync<bool>("confirm", "Bu yemek kaydını silmek istediğinize emin misiniz?");
+        if (!confirmed)
+            return;
+
         await MealRecordService.DeleteMealRecordAsync(mealRecordId);
-        mealRecords = await MealRecordService.GetMealRecordsByEmployeeIdAsync(EmployeeId);
+        if (showAll)
+            await LoadAllMealRecords();
+        else
+            await LoadMealRecordsForMonth(SelectedYear, SelectedMonth);
+    }
+
+    private void ToggleExtras(Guid mealRecordId)
+    {
+        if (extrasCollapseState.ContainsKey(mealRecordId))
+            extrasCollapseState[mealRecordId] = !extrasCollapseState[mealRecordId];
+        else
+            extrasCollapseState[mealRecordId] = true;
+    }
+
+    private decimal GetDayTotal(MealRecordViewModel record)
+    {
+        decimal extrasTotal = record.Extras?.Sum(e => e.Price) ?? 0m;
+        return MenuPrice + extrasTotal;
+    }
+
+    private void CalculateTotalMonthPrice()
+    {
+        if (mealRecords is null) return;
+        totalMonthPrice = mealRecords.Sum(r => GetDayTotal(r));
     }
 }
 
-<h3>
-    @(mealRecords is not null && employeeFullName!=string.Empty
-        ? employeeFullName + " - Çalışanın Yemek Kayıtları"
+<h3 class="mb-4">
+    @(mealRecords is not null && employeeFullName != string.Empty
+        ? $"{employeeFullName} - Çalışanın Yemek Kayıtları"
         : "Çalışan Yemek Kayıtları")
 </h3>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-body">
+        <form class="row g-3 align-items-center">
+            <div class="col-auto">
+                <label for="yearSelect" class="col-form-label fw-semibold">Yıl:</label>
+            </div>
+            <div class="col-auto">
+                <select id="yearSelect" class="form-select" style="min-width: 90px;" @bind="SelectedYear" disabled="@showAll">
+                    @foreach (var year in Years)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <label for="monthSelect" class="col-form-label fw-semibold">Ay:</label>
+            </div>
+            <div class="col-auto">
+                <select id="monthSelect" class="form-select" style="min-width: 90px;" @bind="SelectedMonth" disabled="@showAll">
+                    @for (int m = 1; m <= 12; m++)
+                    {
+                        <option value="@m">@m.ToString("00")</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-primary" @onclick="ShowCurrentMonth" disabled="@(!showAll)">
+                    Bu Ayı Göster
+                </button>
+            </div>
+            <div class="col-auto">
+                <button type="button" class="btn btn-secondary" @onclick="ShowAllRecords" disabled="@showAll">
+                    Tüm Kayıtları Göster
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 @if (mealRecords is null)
 {
     <div>Yükleniyor...</div>
 }
 else if (!mealRecords.Any())
 {
-    <div>Kayıt bulunamadı.</div>
+    <div class="alert alert-warning">Kayıt bulunamadı.</div>
 }
 else
 {
-    <table class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Tarih</th>
-                <th>Sil</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var record in mealRecords)
-            {
+    <div class="alert alert-info mb-3">
+        <strong>Toplam yemek ücreti:</strong> @totalMonthPrice.ToString("C2")
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered table-striped align-middle shadow-sm">
+            <thead class="table-primary">
                 <tr>
-                    <td>@(++rowIndex)</td>
-                    <td>@record.MealDate.ToString("dd.MM.yyyy")</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteMealRecord(record.Id)">
-                            Sil
-                        </button>
-                    </td>
+                    <th>#</th>
+                    <th>Tarih</th>
+                    <th>Ekstralar</th>
+                    <th>Günlük Toplam Ücret</th>
+                    <th>Sil</th>
                 </tr>
-            }
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach (var record in mealRecords)
+                {
+                    <tr>
+                        <td>@(mealRecords.IndexOf(record) + 1)</td>
+                        <td>@record.MealDate.ToString("dd.MM.yyyy")</td>
+                        <td>
+                            @if (record.Extras != null && record.Extras.Any())
+                            {
+                                <button class="btn btn-sm btn-outline-info mb-1" @onclick="() => ToggleExtras(record.Id)">
+                                    Ekstraları Göster
+                                </button>
+                                <div class="collapse @(extrasCollapseState.ContainsKey(record.Id) && extrasCollapseState[record.Id] ? "show" : "") mt-2">
+                                    <ul class="list-group">
+                                        @foreach (var extra in record.Extras)
+                                        {
+                                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                @extra.Name
+                                                <span class="badge bg-primary rounded-pill">@extra.Price.ToString("C2")</span>
+                                            </li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Ekstra yok</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="fw-bold">@GetDayTotal(record).ToString("C2")</span>
+                        </td>
+                        <td>
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteMealRecord(record.Id)">
+                                Sil
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 }

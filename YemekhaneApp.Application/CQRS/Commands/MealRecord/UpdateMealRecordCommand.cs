@@ -3,12 +3,15 @@ using MediatR;
 using OnionArchitectureDemo.Application.Interfaces;
 using OnionArchitectureDemo.Application.Wrappers;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using YemekhaneApp.Application.Interfaces;
 using YemekhaneApp.Domain.Entities;
 using MealRecordEntity = YemekhaneApp.Domain.Entities.MealRecord;
 using EmployeeEntity = YemekhaneApp.Domain.Entities.Employee;
+using ExtraEntity = YemekhaneApp.Domain.Entities.Extra;
 
 namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
 {
@@ -18,6 +21,7 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
         public Guid EmployeeId { get; set; }
         public DateOnly MealDate { get; set; }
         public bool IsEaten { get; set; }
+        public List<Guid> ExtraIds { get; set; } = new();
 
         public class UpdateMealRecordCommandHandler : IRequestHandler<UpdateMealRecordCommand, ServiceResponse<Guid>>
         {
@@ -66,6 +70,14 @@ namespace YemekhaneApp.Application.CQRS.Commands.MealRecord
                     existingRecord.EmployeeId = request.EmployeeId;
                     existingRecord.Year = request.MealDate.Year;
                     existingRecord.Month = request.MealDate.Month;
+
+                    // Ekstralar güncelleniyor
+                    if (request.ExtraIds != null)
+                    {
+                        var extraRepo = _unitOfWork.GetRepository<ExtraEntity>();
+                        var extras = await extraRepo.GetAllAsync(e => request.ExtraIds.Contains(e.Id));
+                        existingRecord.Extras = extras;
+                    }
 
                     await mealRecordRepository.UpdateAsync(existingRecord);
                     await employeeRepository.UpdateAsync(employee);

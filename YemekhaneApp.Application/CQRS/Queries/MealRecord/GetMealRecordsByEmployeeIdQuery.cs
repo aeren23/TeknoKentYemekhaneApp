@@ -36,7 +36,9 @@ namespace YemekhaneApp.Application.CQRS.Queries.MealRecord
             public async Task<ServiceResponse<List<MealRecordDto>>> Handle(GetMealRecordsByEmployeeIdQuery request, CancellationToken cancellationToken)
             {
                 var repo = _unitOfWork.GetRepository<MealRecordEntity>();
-                var records = await repo.GetAllAsync(x => x.EmployeeId == request.EmployeeId);
+                var records = await repo.GetAllAsync(x => x.EmployeeId == request.EmployeeId,
+                    e=>e.Extras
+                    );
                 if(records == null || !records.Any())
                 {
                     return new ServiceResponse<List<MealRecordDto>>("No meal records found for the specified employee.");

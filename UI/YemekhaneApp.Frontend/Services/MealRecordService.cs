@@ -1,4 +1,5 @@
 ﻿using YemekhaneApp.Frontend.Models.MealRecord;
+using YemekhaneApp.Frontend.Models.Extra;
 
 namespace YemekhaneApp.Frontend.Services
 {
@@ -9,6 +10,7 @@ namespace YemekhaneApp.Frontend.Services
         {
             _httpClient = httpClient;
         }
+
         public async Task<List<DateOnly>> GetMealDatesAsync()
         {
             return await _httpClient.GetFromJsonAsync<List<DateOnly>>("api/mealrecord/dates");
@@ -39,11 +41,8 @@ namespace YemekhaneApp.Frontend.Services
 
             response.EnsureSuccessStatusCode();
 
-           return await _httpClient.GetFromJsonAsync<List<MealRecordViewModel>>($"api/mealrecord/employee/{employeeId}") ?? new List<MealRecordViewModel>();
+            return await _httpClient.GetFromJsonAsync<List<MealRecordViewModel>>($"api/mealrecord/employee/{employeeId}") ?? new List<MealRecordViewModel>();
         }
-
-
-
 
         public async Task<MealRecordViewModel> GetMealRecordByIdAsync(Guid id)
         {
@@ -53,7 +52,6 @@ namespace YemekhaneApp.Frontend.Services
         public async Task<List<MealRecordViewModel>> GetMealRecordsByDateAsync(DateOnly date)
         {
             return await _httpClient.GetFromJsonAsync<List<MealRecordViewModel>>($"api/mealrecord/employee/{date}");
-
         }
 
         public async Task<List<MealRecordWithEmployeeViewModel>> GetMealRecordsByDateWithEmployeesAsync(Guid id)
@@ -68,12 +66,13 @@ namespace YemekhaneApp.Frontend.Services
 
         public async Task AddMealRecordAsync(MealRecordCreateViewModel mealRecord)
         {
-            var Year= mealRecord.MealDate.Year;
+            var Year = mealRecord.MealDate.Year;
             var Month = mealRecord.MealDate.Month;
             var Day = mealRecord.MealDate.Day;
-            var now= DateTime.Now;
-            if (Year==now.Year && Month==now.Month && Day <= now.Day)
+            var now = DateTime.Now;
+            if (Year == now.Year && Month == now.Month && Day <= now.Day)
             {
+                // ExtraIds zaten MealRecordCreateViewModel'de var
                 var response = await _httpClient.PostAsJsonAsync("api/mealrecord", mealRecord);
                 response.EnsureSuccessStatusCode();
             }
@@ -85,11 +84,20 @@ namespace YemekhaneApp.Frontend.Services
 
         public async Task UpdateMealRecordAsync(MealRecordUpdateViewModel mealRecord)
         {
-            await _httpClient.PutAsJsonAsync("api/mealrecord", mealRecord);
+            // ExtraIds zaten MealRecordUpdateViewModel'de var
+            var response = await _httpClient.PutAsJsonAsync("api/mealrecord", mealRecord);
+            response.EnsureSuccessStatusCode();
         }
+
         public async Task DeleteMealRecordAsync(Guid id)
         {
             await _httpClient.DeleteAsync($"api/mealrecord/{id}");
+        }
+
+        public async Task DeleteAllMealRecordsByMonthAsync(int year, int month)
+        {
+            var response = await _httpClient.DeleteAsync($"api/mealrecord/year/{year}/month/{month}");
+            response.EnsureSuccessStatusCode();
         }
     }
 }

@@ -1,0 +1,41 @@
+﻿@page "/extralar/ekle"
+@using Microsoft.AspNetCore.Authorization
+@using YemekhaneApp.Frontend.Models.Extra
+@using YemekhaneApp.Frontend.Services
+@using Microsoft.AspNetCore.Components.Forms
+@inject ExtraService ExtraService
+@inject NavigationManager NavigationManager
+
+
+@attribute [Authorize]
+
+<h3>Yeni Ekstra Ekle</h3>
+
+<EditForm Model="extra" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label class="form-label">Adı</label>
+        <InputText class="form-control" @bind-Value="extra.Name" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Fiyat</label>
+        <InputNumber class="form-control" @bind-Value="extra.Price" />
+    </div>
+    <button class="btn btn-success" type="submit">Kaydet</button>
+    <button class="btn btn-secondary ms-2" type="button" @onclick='@(() => NavigationManager.NavigateTo("/extralar"))'>İptal</button>
+</EditForm>
+
+@code {
+    private ExtraCreateViewModel extra = new();
+
+    private async Task HandleValidSubmit()
+    {
+        var id = await ExtraService.CreateExtraAsync(extra);
+        if (id != null)
+        {
+            NavigationManager.NavigateTo("/extralar");
+        }
+    }
+}

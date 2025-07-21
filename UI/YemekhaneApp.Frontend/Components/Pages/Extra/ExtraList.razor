@@ -1,0 +1,77 @@
+﻿@page "/extralar"
+@using Microsoft.AspNetCore.Authorization
+@using YemekhaneApp.Frontend.Models.Extra
+@using YemekhaneApp.Frontend.Services
+@inject ExtraService ExtraService
+@inject NavigationManager NavigationManager
+@using Microsoft.JSInterop
+
+
+@attribute [Authorize]
+
+<h3>Ekstra Ürünler</h3>
+
+<button class="btn btn-primary mb-3" @onclick='@(() => NavigationManager.NavigateTo("/extralar/ekle"))'>Yeni Ekle</button>
+
+@if (extras == null)
+{
+    <div>Yükleniyor...</div>
+}
+else if (!extras.Any())
+{
+    <div class="alert alert-info">Hiç ekstra ürün yok.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Adı</th>
+                <th>Fiyat</th>
+                <th>İşlemler</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var extra in extras)
+            {
+                <tr>
+                    <td>@extra.Name</td>
+                    <td>@extra.Price.ToString("C2")</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-2" @onclick='@(() => Edit(extra.Id))'>Düzenle</button>
+                        <button class="btn btn-sm btn-danger" @onclick='@(() => Delete(extra.Id))'>Sil</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<ExtraViewModel>? extras;
+
+    protected override async Task OnInitializedAsync()
+    {
+        extras = await ExtraService.GetAllExtrasAsync();
+    }
+
+    private void Edit(Guid id)
+    {
+        NavigationManager.NavigateTo($"/extralar/duzenle/{id}");
+    }
+
+    private async Task Delete(Guid id)
+    {
+        if (await JS.InvokeAsync<bool>("confirm", "Silmek istediğinize emin misiniz?"))
+        {
+            var success = await ExtraService.DeleteExtraAsync(id);
+            if (success)
+            {
+                extras = await ExtraService.GetAllExtrasAsync();
+                StateHasChanged();
+            }
+        }
+    }
+
+    [Inject] IJSRuntime JS { get; set; } = default!;
+}

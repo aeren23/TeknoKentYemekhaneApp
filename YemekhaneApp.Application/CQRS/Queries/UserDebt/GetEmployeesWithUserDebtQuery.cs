@@ -39,7 +39,9 @@ namespace YemekhaneApp.Application.CQRS.Queries.UserDebts
                     return new ServiceResponse<List<EmployeeDto>>("Rapor kaydı olan kullanıcı bulunamadı.");
 
                 // Sadece bu Id'lere sahip çalışanları getir
-                var employees = await employeeRepo.GetAllAsync(e => employeeIdsWithDebt.Contains(e.Id));
+                var employees = await employeeRepo.GetAllAsync(e => employeeIdsWithDebt.Contains(e.Id),
+                e => e.UserDebts
+                );
                 var dtoList = _mapper.Map<List<EmployeeDto>>(employees);
 
                 return new ServiceResponse<List<EmployeeDto>>(dtoList);

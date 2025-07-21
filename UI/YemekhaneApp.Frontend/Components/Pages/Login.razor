@@ -1,0 +1,81 @@
+﻿@page "/login"
+@using YemekhaneApp.Frontend.Models.Auth
+@using YemekhaneApp.Frontend.Security
+@inject NavigationManager Navigation
+@inject CustomAuthenticationStateProvider AuthStateProvider
+
+<div class="container d-flex align-items-center justify-content-center min-vh-100">
+    <div class="col-md-5 col-lg-4">
+        <div class="card shadow-lg border-0">
+            <div class="card-header bg-primary text-white text-center">
+                <h3 class="mb-0"><i class="bi bi-person-circle me-2"></i>Giriş Yap</h3>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(ErrorMessage))
+                {
+                    <div class="alert alert-danger text-center">@ErrorMessage</div>
+                }
+                <EditForm Model="authRequest" OnValidSubmit="HandleLogin">
+                    <DataAnnotationsValidator />
+                    <ValidationSummary />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Şifre</label>
+                        <InputText @bind-Value="authRequest.Password" type="password" class="form-control form-control-lg" />
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg" disabled="@IsLoading">
+                            @if (IsLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <p>Giriş Yapılıyor...</p>
+                                                        }
+                            else
+                            {
+                                <i class="bi bi-box-arrow-in-right me-2"></i>
+                                <p>Giriş Yap</p>
+                                                        }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private AuthRequestViewModel authRequest = new();
+    private string ErrorMessage;
+    private bool IsLoading;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var isTrusted = await AuthStateProvider.AuthenticateTrustedUserAsync();
+            if (isTrusted)
+            {
+                Navigation.NavigateTo("/");
+            }
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        IsLoading = true;
+        ErrorMessage = null;
+        StateHasChanged();
+
+        var success = await AuthStateProvider.AuthenticateUser(authRequest);
+        if (success)
+        {
+            Navigation.NavigateTo("/");
+        }
+        else
+        {
+            ErrorMessage = "Şifre hatalı.";
+        }
+
+        IsLoading = false;
+        StateHasChanged();
+    }
+}

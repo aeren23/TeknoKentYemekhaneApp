@@ -11,6 +11,5 @@ namespace YemekhaneApp.Frontend.Models.UserDebt
         public decimal Amount { get; set; }
         public bool IsPaid { get; set; }
         public EmployeeViewModel Employee { get; set; } // Navigation property to Employee
-
     }
 }

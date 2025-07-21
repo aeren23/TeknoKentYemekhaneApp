@@ -6,5 +6,6 @@
         public Guid EmployeeId { get; set; }
         public DateOnly MealDate { get; set; }
         public bool IsEaten { get; set; }
+        public List<Guid> ExtraIds { get; set; } = new();
     }
 }

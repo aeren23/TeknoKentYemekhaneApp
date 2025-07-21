@@ -1,9 +1,14 @@
 ﻿@page "/employees"
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.Employee
 @using YemekhaneApp.Frontend.Services
 @inject EmployeeService EmployeeService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
+@inject MealRecordService MealRecordService
+
+@attribute [Authorize]
+
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -74,7 +79,7 @@
                                         <th>Email</th>
                                         <th>Telefon</th>
                                         <th>Aktif mi?</th>
-                                        <th>Yemek Sayısı</th>
+                                        <th>Aylık Yemek Sayısı</th>
                                         <th class="text-center">İşlemler</th>
                                     </tr>
                                 </thead>
@@ -123,6 +128,14 @@
     protected override async Task OnInitializedAsync()
     {
         Employees = await EmployeeService.GetEmployeesAsync();
+
+        var now = DateTime.Now;
+        foreach (var employee in Employees)
+        {
+            var mealRecords = await MealRecordService.GetMealRecordsByEmployeeIdAsync(employee.Id);
+            employee.TotalMealCount = mealRecords
+                .Count(m => m.MealDate.Year == now.Year && m.MealDate.Month == now.Month);
+        }
     }
 
     private void ShowEmployeeMealRecords(Guid employeeId)

@@ -1,17 +1,18 @@
 ﻿@page "/mealrecords/{Id:guid}"  
+@using Microsoft.AspNetCore.Authorization
 @using YemekhaneApp.Frontend.Models.MealRecord  
 @using YemekhaneApp.Frontend.Services  
 @inject MealRecordService MealRecordService  
 @inject IJSRuntime JS
 @inject NavigationManager NavigationManager
 
+@attribute [Authorize]
 
 @code {  
     [Parameter]  
     public Guid Id { get; set; }  
 
     private List<MealRecordWithEmployeeViewModel>? mealRecords;  
-    private int rowIndex = 0;  
     private DateOnly? mealDate = null;  
 
     protected override async Task OnParametersSetAsync()  
@@ -23,7 +24,6 @@
     {
         mealRecords = await MealRecordService.GetMealRecordsByDateWithEmployeesAsync(Id);  
         mealDate = mealRecords?.FirstOrDefault()?.MealDate;  
-        rowIndex = 0;
     }
 
     private async Task DeleteMealRecordAsync(Guid mealRecordId)
@@ -64,18 +64,18 @@ else
                 </tr>  
             </thead>  
             <tbody>  
-                @foreach (var record in mealRecords)  
+                @foreach (var tuple in mealRecords.Select((record, index) => (record, index)))
                 {  
                     <tr>  
-                        <td>@(++rowIndex)</td>  
-                        <td>@record.Employee.Name @record.Employee.Surname</td>  
-                        <td>@record.Employee.Email</td>  
-                        <td>@record.Employee.PhoneNumber</td>  
+                        <td>@(tuple.index + 1)</td>  
+                        <td>@tuple.record.Employee.Name @tuple.record.Employee.Surname</td>  
+                        <td>@tuple.record.Employee.Email</td>  
+                        <td>@tuple.record.Employee.PhoneNumber</td>  
                         <td>  
-                            <input type="checkbox" disabled checked="@record.Employee.IsActive" />  
+                            <input type="checkbox" disabled checked="@tuple.record.Employee.IsActive" />  
                         </td>  
                         <td>
-                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteMealRecordAsync(record.Id)">
+                            <button class="btn btn-danger btn-sm" @onclick="() => DeleteMealRecordAsync(tuple.record.Id)">
                                 <i class="bi bi-trash"></i> Sil
                             </button>
                         </td>
