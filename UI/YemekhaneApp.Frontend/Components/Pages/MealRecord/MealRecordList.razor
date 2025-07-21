@@ -161,13 +161,13 @@ else
                 </tr>
             </thead>
             <tbody>
-                @foreach (var record in filteredMealDays)
+                @foreach (var tuple in filteredMealDays.Select((record, idx) => (record, idx)))
                 {
                     <tr>
-                        <td>@(++rowIndex)</td>
-                        <td>@record.MealDate.ToString("dd.MM.yyyy")</td>
+                        <td>@(tuple.idx + 1)</td>
+                        <td>@tuple.record.MealDate.ToString("dd.MM.yyyy")</td>
                         <td>
-                            <button class="btn btn-info btn-sm" @onclick="() => GoToDetail(record.Id)">
+                            <button class="btn btn-info btn-sm" @onclick="() => GoToDetail(tuple.record.Id)">
                                 Detay
                             </button>
                         </td>
