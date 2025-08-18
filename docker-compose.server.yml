@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  api:
+    image: alierenogzt/teknokentyemekhaneapp-api:latest
+    restart: always
+    depends_on:
+      - api-db
+    ports:
+      - '5110:8080'
+    environment:
+      - CONNECTIONSTRINGS__YEMEKHANEDB=${CONNECTIONSTRINGS__YEMEKHANEDB}
+    volumes:
+      - dataprotection-keys:/root/.aspnet/DataProtection-Keys
+    networks:
+      - app-network
+
+  frontend:
+    image: alierenogzt/teknokentyemekhaneapp-frontend:latest
+    restart: always
+    depends_on:
+      - api
+    ports:
+      - '10000:8080'
+    environment:
+      - ApiUrl=http://api:8080
+      - ASPNETCORE_ENVIRONMENT=Production
+    volumes:
+      - dataprotection-keys:/root/.aspnet/DataProtection-Keys
+    networks:
+      - app-network
+
+  api-db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: always
+    environment:
+      - MSSQL_SA_PASSWORD=${MSSQL_SA_PASSWORD}
+      - ACCEPT_EULA=Y
+    volumes:
+      - volume_api:/var/opt/mssql
+    networks:
+      - app-network
+
+volumes:
+  volume_api:
+  dataprotection-keys:
+
+networks:
+  app-network:
+    driver: bridge
